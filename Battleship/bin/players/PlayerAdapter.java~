@@ -1,0 +1,74 @@
+package players;
+
+import data.Coord;
+
+/**
+ * Provides a general adapter for {@link Player} class to implement 
+ * some of the basic features every player must have, such as id, 
+ * points and skipped turns.
+ * 
+ * @author Md Tajmilur Rahman
+ */
+public abstract class PlayerAdapter implements Player {
+	
+	private final String mId;
+	private int mPoints;
+	private boolean mIsSkipped;
+	
+	
+	/**
+	 * Default constructor which takes the id which is used
+	 * to identify this player. This id cannot be changed.
+	 * @param id
+	 */
+	public PlayerAdapter (String id){
+		mId = id;
+		mPoints = 0;
+		mIsSkipped = false;
+	}
+	
+	@Override
+	public String getId() {
+		return mId;
+	}
+	
+	@Override
+	public int getPoints(){
+		return mPoints;
+	}
+	
+	@Override
+	public void addPoint(){
+		mPoints++;
+	}	
+	
+	@Override
+	public boolean isSkipped(){
+		return mIsSkipped;
+	}
+	
+	@Override
+	public void setSkipped(boolean skipped){
+		mIsSkipped = skipped;
+	}
+
+	@Override
+	abstract public Coord fire();
+	
+	@Override
+	abstract public Coord placeGrenade();
+
+	@Override
+	abstract public Coord placeShip();
+	
+	@Override
+	abstract public void invalidPlacement(String errorMesage);
+	
+	/**
+	 * Should provide a convenient way of getting a valid coordinate 
+	 * for the game board.
+	 * @return A valid {@link Coord}
+	 */
+	abstract protected Coord getCoord();
+
+}

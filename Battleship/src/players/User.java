@@ -1,0 +1,121 @@
+/**
+ * Name:			Raffi Alan Bezirjian (29538690)
+ * COMP249
+ * Assignment #:	1
+ * Due Date:		September 21, 2018
+ */
+package players;
+
+import java.util.Scanner;
+
+import data.BattleshipBoard;
+import data.Coord;
+
+/**
+ * Represents a human {@link Player} of the {@link BattleshipBoard} game.
+ * <br />Will query the user for each task and will expect a response in the
+ * given {@link Scanner}.
+ * <br /><br /><strong>NOTE: Will not close the scanner.</strong>
+ * @author Raffi Alan Bezirjian
+ *
+ */
+public class User extends PlayerAdapter {
+
+	private Scanner mScanner;
+
+	public User(String id, Scanner sc) {
+		super(id);
+		mScanner = sc;
+	}
+
+	@Override
+	public Coord fire() {
+		//get user response
+		return this.getCoord(String.format("Please choose a fire coordinate in the range of [%d%s - %d%s]:", 
+				1, Coord.COL_CHARACTERS[0], Coord.ROW_MAX, 
+				Coord.COL_CHARACTERS[Coord.COL_CHARACTERS.length -1]));
+	}
+
+	@Override
+	public Coord placeGrenade() {
+		//get user response
+		return this.getCoord(String.format("Please choose a grenade coordinate in the range of [%d%s - %d%s]:", 
+				1, Coord.COL_CHARACTERS[0], Coord.ROW_MAX, 
+				Coord.COL_CHARACTERS[Coord.COL_CHARACTERS.length -1]));
+	}
+
+	@Override
+	public Coord placeShip() {
+		//get user response
+		return this.getCoord(String.format("Please choose a ship coordinate in the range of [%d%s - %d%s]:", 
+					1, Coord.COL_CHARACTERS[0], Coord.ROW_MAX, 
+					Coord.COL_CHARACTERS[Coord.COL_CHARACTERS.length -1]));
+	}
+
+	@Override
+	public void invalidPlacement(String errorMessage) {
+		System.out.println(errorMessage);
+		
+	}
+	
+	/**
+	 * Convenient method that lumps together the querying and response 
+	 * checking of the query until the user enters a valid Coord based on 
+	 * {@link #responseValidation(String)}.
+	 * @param query Reason for coordinate.
+	 * @return A valid Coord
+	 */
+	private Coord getCoord(String query){
+		//query user
+		System.out.print(query);
+		
+		//get the coordinate
+		return this.getCoord();
+
+	}
+	
+	/**
+	 * Method used to confirm that the user response to a coordinate query
+	 * is valid by checking:
+	 * <ol>
+	 * 	<li>the length of the response (<code>response.length == 2 </code>)</li>
+	 * 	<li>Checks if the coordinate created by the 2 character coordinate is valid</li>
+	 * </ol>
+	 * @param response The user response to validate
+	 * @return Will return a valid {@link Coord} or <code>null</code>
+	 * 								 if the response is invalid.
+	 */
+	private Coord responseValidation(String response){
+		Coord c = null;
+		//checks length
+		if(response.length() == 2){
+			Coord temp = new Coord(Character.getNumericValue(response.charAt(0)), 
+					response.charAt(1));
+			
+			//checks if the temporary coordinate is valid
+			if(Coord.isValidCoord(temp)){
+				c = temp; //sets the valid coordinate
+			}
+		}
+		return c;
+	}
+
+	@Override
+	protected Coord getCoord() {
+		Coord c;
+		while(true){
+			//get and do basic formatting to response
+			String response = mScanner.nextLine().trim();
+			if((c = this.responseValidation(response)) != null){
+				break;
+			}
+			
+			//let the user know they messed up and start over
+			this.invalidPlacement(String.format("%s i not a valid coordinate of form (Integer, Character) " +
+							"in ranger [%d%s - %d%s]%n>", response, 1, Coord.COL_CHARACTERS[0], Coord.ROW_MAX, 
+								Coord.COL_CHARACTERS[Coord.COL_CHARACTERS.length -1]));
+		}
+		
+		return c;
+	}
+}

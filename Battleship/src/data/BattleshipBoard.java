@@ -1,0 +1,339 @@
+/**
+ * Name:			Raffi Alan Bezirjian (29538690)
+ * COMP249
+ * Assignment #:	1
+ * Due Date:		September 21, 2018
+ */
+package data;
+
+import data.Cell.Content;
+import players.Player;
+
+/**
+ * This class represents a game board for a custom Battleship game.
+ * 
+ * @author Raffi Alan Bezirjian
+ */
+public class BattleshipBoard {
+	
+	public static final int GRENADE_AMOUNT = 4;
+	public static final int SHIP_AMOUNT = 6;
+
+	private Cell[][] mBoard;
+	private int mTurn;
+	private Player mPlayer1;
+	private Player mPlayer2;
+	
+	
+	/**
+	 * Default constructor which creates a game board with this allowed coordinates
+	 * o the {@link Coord} class.
+	 * 
+	 * @param players Takes any amount of players.
+	 */
+	public BattleshipBoard(Player p1, Player p2){
+		mBoard = new Cell[Coord.ROW_MAX][Coord.COL_CHARACTERS.length];
+		mPlayer1 = p1;
+		mPlayer2 = p2;
+		mTurn = 0;
+		
+		Coord c;
+		for(int i = 0; i < mBoard.length; ++i){
+			for(int j = 0; j < mBoard[0].length; ++j){
+				c = new Coord(i+1, Coord.COL_CHARACTERS[j]);
+				mBoard[i][j] = new Cell(c);
+			}
+		}
+	}
+	
+	/**
+	 * Provide a way to set up the board by allowing each {@link Player} to choose the
+	 * location of all grenades and ships each player can place. The amount of grenades placeable
+	 * by player is given by {@link GRENADE_AMOUNT} and that of ships {@link SHIP_AMOUNT}.
+	 * <br /><br /><strong>Note:</strong> Player one picks first, and since each cell can
+	 * only contain one content (and by extension owner), player two cannot choose cells chosen
+	 * by player one.
+	 */
+	public void setup(){
+		//setup each player individually
+		System.out.println("~ ~ Begin Setup ~ ~\n");
+		this.playerSetup(mPlayer1);
+		this.playerSetup(mPlayer2);
+		System.out.println("~ ~Setup Finished ~ ~\n");
+	}
+	
+	/**
+	 * Provides a way to unhide a specific cell. This is useful if a {@link Player} has
+	 * {@link Player#fire()}ed at the given cell and the board needs to display the content.
+	 * 
+	 * @param c The cell to  unhide.
+	 */
+	private void unhideCell(Coord c){
+		Cell cell = this.getCell(c);
+		if(cell == null){
+			System.out.println("Could not unhide the cell bcause coordinates " + 
+									c.toString()  + " is not a valid coordiante.");
+			return;
+		}
+		
+		cell.setHide(false);
+	}
+	
+	/**
+	 * Method which will run through a regular turn in the battleship game.
+	 * This method relies on an internal turn member variable which is 
+	 * managed/updated by this method. This runs as follows
+	 * <ol>
+	 * 	<li>Checks which player's turn it is</li>
+	 * 	<li>Checks if player's turn is skipped</li>
+	 *  <li>Asks the user to fire</li>
+	 *  <li>Checks the content inside the chosen cell and takes appropriate action</li>
+	 *  <li>Checks if there has been a winner</li>
+	 * </ol>
+	 * @return <strong>true</strong> if a player has won, and 
+	 * 				<strong>false</strong> if the game is not over and another turn should be played.
+	 */
+	public boolean playTurn(){
+		
+		Player p = (mTurn == 0) ? mPlayer1 : mPlayer2;
+		//checks to see if player should skip his turn
+		if(p.isSkipped()){
+			System.out.println("Turn was skipped.");
+			this.nextTurn();
+			p.setSkipped(false);
+			return false; 
+		}
+		
+		Cell c;
+		
+		//player should fire
+		c = this.getCell(p.fire());
+		
+		//checks if position has already been fired on.
+		if(!c.isHidden()){
+			System.out.println("Position already called.");
+			this.nextTurn();
+			return false;
+		}
+		
+		//unhides hidden cell
+		this.unhideCell(c.getCoords());
+		
+		//process chosen coordinate
+		switch(c.getContent()){
+			case SHIP:
+				System.out.println(c.getOwner() + "\'s ship was hit.");
+				//decides which player gets point based on who's ship was hit. (inverse relation)
+				if(c.getOwner().equals(mPlayer1.getId())){
+					mPlayer2.addPoint();
+				}else{
+					 mPlayer1.addPoint();
+				}
+				
+				break;
+				
+			case GRENADE:
+				System.out.println("BOOM!!! " + c.getOwner() + "\'s grenade was hit.\n" + 
+										p.getId() + "\'s next turn will be skipped.");
+				p.setSkipped(true);
+				break;
+				
+			default:
+				System.out.println("Nothing happened.");
+		}
+		
+		//checks winning condition for both players
+		if(this.hasWon(mPlayer1)){
+			System.out.println("Human: " + mPlayer1.getPoints() + " Computer: " + mPlayer2.getPoints());
+			System.out.println("~ ~ " + mPlayer1.getId() + " has won the game ~ ~");
+			return true;
+		}else if(this.hasWon(mPlayer2)){
+
+			System.out.println("Human: " + mPlayer1.getPoints() + " Computer: " + mPlayer2.getPoints());
+			System.out.println("~ ~ " + mPlayer2.getId() + " has won the game ~ ~");
+			return true;
+		}
+		
+		this.nextTurn();
+
+		return false;
+	}
+	
+	/**
+	 * Creates a grid of the corresponding cell's content (or {@link Cell.HIDE_CHARACTER})
+	 * Separated by spaces and formatted based  on player. The whole grid is indented. 
+	 */
+	@Override
+	public String toString(){
+		String indent = new String("\t\t\t");
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i = 0; i < mBoard.length + 1; ++i){
+			sb.append(indent);
+			if(mBoard.length == i){
+				sb.append("  ");
+			}else{
+				sb.append((i+1) + "~");
+			}
+			
+			for(int j = 0; j < mBoard[0].length; ++j){
+				if(mBoard.length == i){
+					sb.append(Coord.COL_CHARACTERS[j] + " ");
+					continue;
+				}
+				//differentiates content based on player
+				Cell c = mBoard[i][j];
+				if(c.getOwner() == null){
+					sb.append(c.toString() + " ");
+				}else if(c.getOwner().equals(mPlayer1.getId())){
+					sb.append(c.toString().toLowerCase() + " ");
+					
+				}else if(c.getOwner().equals(mPlayer2.getId())){ 
+					sb.append(c.toString().toUpperCase() + " "); 
+				}
+			}
+			sb.append("\n");
+		}
+		
+		return sb.toString();		
+	}
+	
+	/**
+	 * Updates the internal turn variable.
+	 */
+	private void nextTurn(){
+		mTurn = (mTurn + 1) % 2;
+	}
+
+	/**
+	 * Method to set up a player on the board.
+	 * @param p Player to set up.
+	 * @see #setup()
+	 */
+	private void playerSetup(Player p){
+		System.out.println("~ Setup Player: " + p.getId() + " ~");
+		
+		//ships
+		System.out.println("Placing Ships");
+		int shipCount = 0;
+		while(shipCount < SHIP_AMOUNT){
+			Coord c = p.placeShip();
+			if(this.setShip(c, p)){
+				++shipCount;
+			}
+		}
+		
+		//grenades
+		System.out.println("Placing Grenades");
+		int grenadeCount = 0;
+		while(grenadeCount < GRENADE_AMOUNT){
+			Coord c = p.placeGrenade();
+			if(this.setGrenade(c, p)){
+				++grenadeCount;
+			}
+		}
+		
+		System.out.println("~ End " + p.getId() + " Setup ~");
+	}
+	
+	/**
+	 * Method which sets the content of the given coordinate to {@link Content.SHIP}
+	 * which is owned by the given player.
+	 * <br /> <br /><strong>Note:</strong> if the coordinate could not be mapped to a cell
+	 * 	or the cell is occupied {@link Player.invalidPlacement(String)} is called with the
+	 * 	appropriate error message.
+	 * 
+	 * @param c Coordinate to place ship. 
+	 * @param p Owner of the ship.
+	 *	
+	 * @return <strong>true</strong> if the content of the cell has been modified.
+	 */
+	private boolean setShip(Coord c, Player p){
+		Cell cell = this.getCell(c);
+		
+		if(cell == null){
+			p.invalidPlacement("Could not match coordinate.");
+			return false;
+		}else if(cell.isOccupied()){
+			p.invalidPlacement("Cell is already occupied");
+			return false;
+		}
+		
+		cell.setContent(p.getId(), Cell.Content.SHIP);
+		return true;
+	}
+	
+	/**
+	 * Method which sets the content of the given coordinate to {@link Content.GRENADE}
+	 * which is owned by the given player.
+	 * <br /> <br /><strong>Note:</strong> if the coordinate could not be mapped to a cell
+	 * 	or the cell is occupied {@link Player.invalidPlacement(String)} is called with the
+	 * 	appropriate error message.
+	 * 
+	 * @param c Coordinate to place grenade. 
+	 * @param p Owner of the grenade.
+	 *	
+	 * @return <strong>true</strong> if the content of the cell has been modified.
+	 */
+	private boolean setGrenade(Coord c, Player p){
+		Cell cell = this.getCell(c);
+		
+		if(cell == null){
+			p.invalidPlacement("Could not match coordinate.");
+			return false;
+		}else if(cell.isOccupied()){
+			p.invalidPlacement("Cell is already occupied");
+			return false;
+		}
+		
+		cell.setContent(p.getId(), Cell.Content.GRENADE);
+		return true;
+	}
+	
+	/**
+	 * Method to retrieve a cell based on a given {@link Coord}.
+	 * This method is also a good check to see if the {@link Coord} is a valid one, since
+	 * if the coord falls outside the range of the board, this method returns <code>null</null>.
+	 * @param c The coordinate to retrieve the cell from.
+	 * @return The cell at the given cordinate or <code>null</code>
+	 */
+	private Cell getCell(Coord c){
+		//checks if the coordinate is valid and then retrieves it. 
+		if(Coord.isValidCoord(c)){
+			return mBoard[c.getRow()-1][this.getColNumber(c.getCol())];
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Loops though all possible characters for columns and checks if the
+	 * given character matches any and returns that index. Method provides a map
+	 * from character to index in board. This method is brute force but since the {@link Coord.COL_CHARCTERS}
+	 * is very small, this method should run fast enough.<br /> <br />
+	 * <strong>Note:</strong> will output a value of <code>-1</code> if the character
+	 * 		is not an accepted column character indicated by {@link COL_CHARACTERS}, 
+	 * @param c
+	 * @return
+	 */
+	private int getColNumber(char c){
+		for(int i = 0; i < Coord.COL_CHARACTERS.length; ++i){
+			if(Coord.COL_CHARACTERS[i] == c){
+				return i;
+			}
+		}
+		
+		return -1;	//signals error
+	}
+	
+	/**
+	 * Checks if player has won by checking win condition:<br />
+	 * <code>p.getPoints() >= {@link BattleshipBoard.SHIP_AMOUNT}</code>
+	 * @param p The player to check the win condition on.
+	 * @return <strong>true</strong> if the win condition has been met by 
+	 * 			the given player or <strong>false</strong> if it has not been.
+	 */
+	private boolean hasWon(Player p){
+		return p.getPoints() >= SHIP_AMOUNT;
+	}
+}
