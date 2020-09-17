@@ -1,9 +1,4 @@
-/**
- * Name:			Raffi Alan Bezirjian (29538690)
- * COMP249
- * Assignment #:	1
- * Due Date:		September 21, 2018
- */
+
 import data.BattleshipBoard;
 import players.Player;
 import players.Computer;
